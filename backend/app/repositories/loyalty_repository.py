@@ -28,6 +28,19 @@ class LoyaltyRepository:
             ).fetchone()
             return row_to_dict(row)
 
+    def find_member_by_phone(self, phone: str) -> dict | None:
+        with get_connection() as conn:
+            row = conn.execute(
+                """
+                SELECT m.*, t.name AS tier_name, t.discount_percent, t.birthday_bonus, t.benefits
+                FROM members m
+                JOIN tiers t ON t.id = m.tier_id
+                WHERE m.phone = ?
+                """,
+                (phone,),
+            ).fetchone()
+            return row_to_dict(row)
+
     def create_member(self, name: str, phone: str, birthday: str, tier_id: int) -> dict:
         with get_connection() as conn:
             cursor = conn.execute(

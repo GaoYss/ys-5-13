@@ -38,11 +38,22 @@ class LoyaltyService:
         except ValueError as exc:
             raise HTTPException(status_code=422, detail="生日格式必须为 YYYY-MM-DD") from exc
 
+        existing = self.repo.find_member_by_phone(phone)
+        if existing is not None:
+            normalized = self._normalize_member(existing)
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "message": "该手机号已注册会员",
+                    "member": normalized
+                }
+            )
+
         tier = self.repo.best_tier_for_points(0)
         try:
             return self._normalize_member(self.repo.create_member(name, phone, birthday, tier["id"]))
         except Exception as exc:
-            raise HTTPException(status_code=409, detail="手机号已存在或会员创建失败") from exc
+            raise HTTPException(status_code=409, detail="会员创建失败") from exc
 
     def get_member_or_404(self, member_id: int) -> dict:
         member = self.repo.get_member(member_id)

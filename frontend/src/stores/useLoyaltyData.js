@@ -11,18 +11,24 @@ const state = reactive({
   gifts: [],
   tiers: [],
   vouchers: [],
-  transactions: []
+  transactions: [],
+  duplicateMember: null,
+  highlightMemberId: null
 })
 
 async function run(action, successMessage = '') {
   state.loading = true
   state.error = ''
+  state.duplicateMember = null
   try {
     const result = await action()
     state.notice = successMessage
     return result
   } catch (error) {
     state.error = error.message
+    if (error.detail && error.detail.member) {
+      state.duplicateMember = error.detail.member
+    }
     throw error
   } finally {
     state.loading = false
@@ -54,6 +60,16 @@ export function useLoyaltyData() {
   return {
     state,
     refreshAll,
+    clearDuplicateMember() {
+      state.duplicateMember = null
+    },
+    highlightMember(memberId) {
+      state.highlightMemberId = memberId
+      state.duplicateMember = null
+      setTimeout(() => {
+        state.highlightMemberId = null
+      }, 5000)
+    },
     async createMember(payload) {
       await run(() => loyaltyApi.createMember(payload), '会员已创建')
       await refreshAll()
